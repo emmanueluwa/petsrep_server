@@ -26,34 +26,49 @@ export const createPost = async (req, res) => {
 };
 
 export const updatePost = async (req, res) => {
-  const { id: _id } = req.params;
-  const post = req.body;
+  const { id } = req.params;
 
-  if (!mongoose.Types.ObjectId.isValid(_id))
+  const { creator, title, message, tags, selectedFile } = req.body;
+
+  if (!mongoose.Types.ObjectId.isValid(id))
     return res.status(404).send("No post with that id");
 
-  try {
-    const updatedPost = await PostMessage.findByIdAndUpdate(
-      _id,
-      { ...post, id },
-      {
-        new: true,
-      }
-    );
+  const updatedPost = { creator, title, message, tags, selectedFile, _id: id };
 
-    res.json(updatedPost);
+  try {
+    await PostMessage.findByIdAndUpdate(id, updatedPost, { new: true });
+
+    res.status(200).json(updatedPost);
   } catch (error) {
     console.log(error);
   }
 };
 
 export const deletePost = async (req, res) => {
-  const { id: _id } = req.params;
+  const { id } = req.params;
 
-  if (!mongoose.Types.ObjectId.isValid(_id))
+  if (!mongoose.Types.ObjectId.isValid(id))
     return res.status(404).send("No post with that id");
 
-  await PostMessage.findByIdAndRemove(id);
+  await PostMessage.findByIdAndDelete(req.params.id);
 
   res.json({ message: "Post deleted successfully" });
+};
+
+export const likepost = async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id))
+    return res.status(404).send("No post with that id");
+
+  const post = await PostMessage.findById(id);
+  const updatedPost = await PostMessage.findByIdAndUpdate(
+    id,
+    {
+      likeCount: post.likeCount + 1,
+    },
+    { new: true }
+  );
+
+  res.json(updatedPost);
 };
